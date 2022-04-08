@@ -1,0 +1,35 @@
+{
+	"folders": [
+		{
+			"path": "clock-divider-qtpy"
+		},
+		{
+			"path": "solder-state-lfo"
+		},
+		{
+			"path": "solder-state-vco"
+		},
+		{
+			"path": "solderstate-additive-vco"
+		},
+		{
+			"path": "solderstate-fm-vco"
+		},
+		{
+			"path": "solderstate-chord-vco"
+		},
+		{
+			"path": "solderstate-additive-vco-qtpy"
+		},
+		{
+			"path": "solderstate-fm-vco-qtpy"
+		},
+		{
+			"path": "solderstate-chord-vco-qtpy"
+		},
+		{
+			"path": "solderstate-euclidean"
+		}
+	],
+	"settings": {}
+}
