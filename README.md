@@ -1,14 +1,15 @@
 # Projects
-Clock Divider (QT Py)
-LFO (Nano)
-2OSC VCO (Nano)
-Additive VCO (Nano)
-Chord VCO (Nano)
-FM VCO (Nano)
-Additive VCO (QT Py)
-Chord VCO (QT Py)
-FM VCO (QT Py)
-6CH Euclidean Gate Sequencer (Nano)
+
+- Clock Divider (QT Py)
+- LFO (Nano)
+- 2OSC VCO (Nano)
+- Additive VCO (Nano)
+- Chord VCO (Nano)
+- FM VCO (Nano)
+- Additive VCO (QT Py)
+- Chord VCO (QT Py)
+- FM VCO (QT Py)
+- 6CH Euclidean Gate Sequencer (Nano)
 
 
 ### Licenses, References, and other credits
