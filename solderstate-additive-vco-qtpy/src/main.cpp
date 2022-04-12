@@ -2,6 +2,8 @@
 
 #define CONTROL_RATE 128 // Hz, powers of 2 are most reliable
 
+#define DEBUG 1
+
 // knobs, top/left to bottom/right ...
 #define KNOB_1 A1
 #define KNOB_2 A2

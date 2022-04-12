@@ -29,6 +29,14 @@
 		},
 		{
 			"path": "solderstate-euclidean"
+		},
+		{
+			"name": "baksteen-opl2",
+			"path": "../baksteen-opl2"
+		},
+		{
+			"name": "opl2-demotune",
+			"path": "../opl2-demotune"
 		}
 	],
 	"settings": {}
