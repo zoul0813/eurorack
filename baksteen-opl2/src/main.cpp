@@ -21,8 +21,6 @@
 #include <OPL2.h>
 #include <instruments.h>
 
-#define TRIG_LEN 30 // 30ms
-
 OPL2 opl2;
 
 bool bassPrev = false;

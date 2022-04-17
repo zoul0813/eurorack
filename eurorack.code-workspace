@@ -31,13 +31,28 @@
 			"path": "solderstate-euclidean"
 		},
 		{
-			"name": "baksteen-opl2",
-			"path": "../baksteen-opl2"
-		},
-		{
 			"name": "opl2-demotune",
 			"path": "../opl2-demotune"
+		},
+		{
+			"path": "baksteen-opl2"
+		},
+		{
+			"name": "feather-sampler",
+			"path": "../feather-sampler"
+		},
+		{
+			"name": "Open-DSO-150",
+			"path": "../Open-DSO-150"
+		},
+		{
+			"path": "../pinchenettes"
 		}
 	],
-	"settings": {}
+	"settings": {
+		"files.associations": {
+			"*.tcc": "cpp",
+			"fstream": "cpp"
+		}
+	}
 }
