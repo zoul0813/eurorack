@@ -47,6 +47,10 @@
 		},
 		{
 			"path": "../pinchenettes"
+		},
+		{
+			"name": "opl2-serial",
+			"path": "../opl2-serial"
 		}
 	],
 	"settings": {
