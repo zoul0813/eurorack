@@ -22,14 +22,22 @@
 #include <OPL2.h>
 #include <midi_instruments.h>
 #include <Bounce2.h>
+#include <RotaryEncoder.h>
 
 #define CV_VOCT A1
 #define CV_ATTACK A2
 #define CV_DECAY A3
 #define CV_SUSTAIN A4
 #define CV_RELEASE A5
-#define B_PRESET_NEXT 3
-#define B_PRESET_PREV 4
+
+#define B_PRESET_NEXT 5
+#define B_PRESET_PREV 6
+
+#define ENCODER_1 2
+#define ENCODER_2 3
+#define ENCODER_SW 7
+#define ENCODER_LATCH RotaryEncoder::LatchMode::FOUR3
+
 #define VOICES 4
 
 OPL2 opl2;
@@ -44,18 +52,33 @@ int8_t currentInstrument = 0;
 
 Bounce presetNext = Bounce();
 Bounce presetPrev = Bounce();
+Bounce encoderSwitch = Bounce();
+RotaryEncoder *encoder = nullptr;
+
+int oldPosition = -999;
+int newPosition = -999;
+int i = 0;
+int8_t select_menu = 0; //
 
 void setInstrument();
+void updateEncoder();
 
 void setup()
 {
   Serial.begin(9600);
 
   presetNext.attach(B_PRESET_NEXT, INPUT_PULLUP);
-  presetPrev.attach(B_PRESET_PREV, INPUT_PULLUP);
-
   presetNext.interval(5);
+
+  presetPrev.attach(B_PRESET_PREV, INPUT_PULLUP);
   presetPrev.interval(5);
+
+  encoderSwitch.attach(ENCODER_SW, INPUT_PULLUP);
+  encoderSwitch.interval(5);
+
+  encoder = new RotaryEncoder(ENCODER_1, ENCODER_2, ENCODER_LATCH);
+  attachInterrupt(digitalPinToInterrupt(ENCODER_1), updateEncoder, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(ENCODER_2), updateEncoder, CHANGE);
 
   opl2.begin();
   setInstrument();
@@ -68,19 +91,63 @@ void loop()
   voct = analogRead(CV_VOCT);
   presetNext.update();
   presetPrev.update();
+  encoderSwitch.update();
 
-  if(presetNext.changed() && presetNext.read()) {
+  oldPosition = newPosition;
+  newPosition = encoder->getPosition();
+  RotaryEncoder::Direction encoderDirection = encoder->getDirection();
+
+  if (presetNext.changed() && presetNext.read())
+  {
     currentInstrument++;
-    if(currentInstrument >= 128) currentInstrument = 0;
+    if (currentInstrument < 0)
+    {
+      currentInstrument = 0;
+    }
     setInstrument();
   }
 
-  if(presetPrev.changed() && presetPrev.read()) {
+  if (presetPrev.changed() && presetPrev.read())
+  {
     currentInstrument--;
-    if(currentInstrument < 0) currentInstrument = 127;
+    if (currentInstrument < 0)
+    {
+      currentInstrument = 127;
+    }
     setInstrument();
   }
 
+  if (encoderSwitch.changed() && encoderSwitch.read())
+  {
+    Serial.println("Encoder Switch");
+  }
+
+  if (encoderDirection == RotaryEncoder::Direction::COUNTERCLOCKWISE)
+  { // turn left
+    oldPosition = newPosition;
+    select_menu--;
+    if (select_menu < 0)
+    {
+      select_menu = 3;
+    }
+    Serial.print("Encoder: Left, Menu: ");
+    Serial.println(select_menu);
+  }
+  else if (encoderDirection == RotaryEncoder::Direction::CLOCKWISE)
+  { // turn right
+    oldPosition = newPosition;
+    select_menu++;
+    if (select_menu > 3)
+    {
+      select_menu = 0;
+    }
+    Serial.print("Encoder: Right, Menu: ");
+    Serial.println(select_menu);
+  }
+  else
+  {
+    // Serial.print("Encoder: None, Menu: ");
+  }
 
   float voltage = voct * (5.0 / 1023.0);
 
@@ -89,12 +156,13 @@ void loop()
   uint8_t note = semitone - (octave * 12);
   uint8_t fifth_octave = octave;
   uint8_t fifth = note + 7;
-  if(note > 12) {
+  if (note > 12)
+  {
     fifth_octave++;
     fifth -= 12;
   }
-  octave += OCTAVE_BASE; 
-  
+  octave += OCTAVE_BASE;
+
   if (voct > 0 && (voct < last_voctM || voct > last_voctP))
   {
     last_voctM = voct - 2;
@@ -130,13 +198,20 @@ void loop()
   }
 }
 
-void setInstrument() {
+void updateEncoder()
+{
+  encoder->tick(); // just call tick() to check the state.
+}
+
+void setInstrument()
+{
   const unsigned char *inst = midiInstruments[currentInstrument];
-  Serial.print("Instrument: " );
+  Serial.print("Instrument: ");
   Serial.println(currentInstrument);
-  Instrument piano = opl2.loadInstrument(inst);      // Load a piano instrument.
-  for(int i = 0; i < VOICES; i++) {
-    opl2.setInstrument(i, piano);                                   // Assign the instrument to OPL2 channel 0.
+  Instrument piano = opl2.loadInstrument(inst); // Load a piano instrument.
+  for (int i = 0; i < VOICES; i++)
+  {
+    opl2.setInstrument(i, piano); // Assign the instrument to OPL2 channel 0.
     opl2.setVolume(i, CARRIER, 0x00);
   }
 }
