@@ -21,7 +21,15 @@
 #include <SPI.h>
 #include <OPL2.h>
 #include <midi_instruments.h>
+#include <Bounce2.h>
 
+#define CV_VOCT A1
+#define CV_ATTACK A2
+#define CV_DECAY A3
+#define CV_SUSTAIN A4
+#define CV_RELEASE A5
+#define B_PRESET_NEXT 3
+#define B_PRESET_PREV 4
 #define VOICES 4
 
 OPL2 opl2;
@@ -32,24 +40,48 @@ uint32_t last_note = 0;
 float VOLTAGE_OFFSET = 0.01;
 uint8_t OCTAVE_BASE = 2;
 uint8_t channel = 0;
+int8_t currentInstrument = 0;
+
+Bounce presetNext = Bounce();
+Bounce presetPrev = Bounce();
+
+void setInstrument();
 
 void setup()
 {
   Serial.begin(9600);
 
+  presetNext.attach(B_PRESET_NEXT, INPUT_PULLUP);
+  presetPrev.attach(B_PRESET_PREV, INPUT_PULLUP);
+
+  presetNext.interval(5);
+  presetPrev.interval(5);
+
   opl2.begin();
-  Instrument piano = opl2.loadInstrument(INSTRUMENT_CRYSTAL);      // Load a piano instrument.
-  for(int i = 0; i < VOICES; i++) {
-    opl2.setInstrument(i, piano);                                   // Assign the instrument to OPL2 channel 0.
-    opl2.setVolume(i, CARRIER, 0x00);
-  }
+  setInstrument();
 }
 
 void loop()
 {
   uint32_t ms = millis();
 
-  voct = analogRead(A1);
+  voct = analogRead(CV_VOCT);
+  presetNext.update();
+  presetPrev.update();
+
+  if(presetNext.changed() && presetNext.read()) {
+    currentInstrument++;
+    if(currentInstrument >= 128) currentInstrument = 0;
+    setInstrument();
+  }
+
+  if(presetPrev.changed() && presetPrev.read()) {
+    currentInstrument--;
+    if(currentInstrument < 0) currentInstrument = 127;
+    setInstrument();
+  }
+
+
   float voltage = voct * (5.0 / 1023.0);
 
   uint16_t semitone = map(voct, 0, 1023, 0, 61);
@@ -95,5 +127,16 @@ void loop()
     // opl2.playNote(1, fifth_octave, fifth);
 
     last_note = ms;
+  }
+}
+
+void setInstrument() {
+  const unsigned char *inst = midiInstruments[currentInstrument];
+  Serial.print("Instrument: " );
+  Serial.println(currentInstrument);
+  Instrument piano = opl2.loadInstrument(inst);      // Load a piano instrument.
+  for(int i = 0; i < VOICES; i++) {
+    opl2.setInstrument(i, piano);                                   // Assign the instrument to OPL2 channel 0.
+    opl2.setVolume(i, CARRIER, 0x00);
   }
 }
