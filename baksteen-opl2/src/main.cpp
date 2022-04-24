@@ -17,99 +17,83 @@
  */
 
 #include <Arduino.h>
+#include <math.h>
 #include <SPI.h>
 #include <OPL2.h>
-#include <instruments.h>
+#include <midi_instruments.h>
+
+#define VOICES 4
 
 OPL2 opl2;
-
-bool bassPrev = false;
-bool snarePrev = false;
-bool tomPrev = false;
-bool cymbalPrev = false;
-bool hatsPrev = false;
+uint16_t voct = 2; // 0-1023
+uint16_t last_voctP = 2;
+uint16_t last_voctM = 2;
+uint32_t last_note = 0;
+float VOLTAGE_OFFSET = 0.01;
+uint8_t OCTAVE_BASE = 2;
+uint8_t channel = 0;
 
 void setup()
 {
-  pinMode(A1, INPUT);
-  pinMode(A2, INPUT);
-  pinMode(A3, INPUT);
-  pinMode(A4, INPUT);
-  pinMode(A5, INPUT);
-
   Serial.begin(9600);
 
   opl2.begin();
-
-  // Set percussion mode and load instruments.
-  Instrument bass = opl2.loadInstrument(INSTRUMENT_BDRUM2);
-  Instrument snare = opl2.loadInstrument(INSTRUMENT_RKSNARE1);
-  Instrument tom = opl2.loadInstrument(INSTRUMENT_TOM2);
-  Instrument cymbal = opl2.loadInstrument(INSTRUMENT_CYMBAL1);
-  // Instrument cymbal = opl2.loadInstrument(INSTRUMENT_HIHAT1);
-  Instrument hihat = opl2.loadInstrument(INSTRUMENT_HIHAT2);
-
-  opl2.setPercussion(true);
-  opl2.setDrumInstrument(bass, DRUM_BASS);
-  opl2.setDrumInstrument(snare, DRUM_SNARE);
-  opl2.setDrumInstrument(tom, DRUM_TOM);
-  opl2.setDrumInstrument(cymbal, DRUM_CYMBAL);
-  opl2.setDrumInstrument(hihat, DRUM_HI_HAT);
-
-  // Set octave and frequency for bass drum.
-  opl2.setBlock(6, 4);
-  opl2.setFNumber(6, opl2.getNoteFNumber(NOTE_C));
-
-  // Set octave and frequency for snare drum and hi-hat.
-  opl2.setBlock(7, 3);
-  opl2.setFNumber(7, opl2.getNoteFNumber(NOTE_C));
-  // Set low volume on hi-hat
-  opl2.setVolume(7, OPERATOR1, 16);
-
-  // Set octave and frequency for tom tom and cymbal.
-  opl2.setBlock(8, 3);
-  opl2.setFNumber(8, opl2.getNoteFNumber(NOTE_A));
-
-  opl2.setDrums(true, true, false, true, false);
-  delay(200);
-  opl2.setDrums(false, false, false, false, false);
+  Instrument piano = opl2.loadInstrument(INSTRUMENT_CRYSTAL);      // Load a piano instrument.
+  for(int i = 0; i < VOICES; i++) {
+    opl2.setInstrument(i, piano);                                   // Assign the instrument to OPL2 channel 0.
+    opl2.setVolume(i, CARRIER, 0x00);
+  }
 }
 
 void loop()
 {
-  bool bass = digitalRead(A1);
-  bool snare = digitalRead(A2);
-  bool tom = digitalRead(A3);
-  bool cymbal = digitalRead(A4);
-  bool hats = digitalRead(A5);
+  uint32_t ms = millis();
 
-  Serial.print(bass);
-  Serial.print(", ");
-  Serial.print(snare);
-  Serial.print(", ");
-  Serial.print(tom);
-  Serial.print(", ");
-  Serial.print(cymbal);
-  Serial.print(", ");
-  Serial.println(hats);
+  voct = analogRead(A1);
+  float voltage = voct * (5.0 / 1023.0);
 
-  bool update = false;
-
-  update = (bass && !bassPrev) 
-    || (snare && !snarePrev)
-    || (tom && !tomPrev)
-    || (cymbal && !cymbalPrev)
-    || (hats && !hatsPrev);
-
-  if (update)
-  {
-    opl2.setDrums(bass, snare, tom, cymbal, hats);
-    delay(10);
+  uint16_t semitone = map(voct, 0, 1023, 0, 61);
+  uint8_t octave = semitone / 12;
+  uint8_t note = semitone - (octave * 12);
+  uint8_t fifth_octave = octave;
+  uint8_t fifth = note + 7;
+  if(note > 12) {
+    fifth_octave++;
+    fifth -= 12;
   }
+  octave += OCTAVE_BASE; 
+  
+  if (voct > 0 && (voct < last_voctM || voct > last_voctP))
+  {
+    last_voctM = voct - 2;
+    last_voctP = voct + 2;
+    Serial.print("V/OCT: ");
 
-  bassPrev = bass;
-  snarePrev = snare;
-  tomPrev = tom;
-  cymbalPrev = cymbal;
-  hatsPrev = hats;
+    Serial.print(semitone);
+    Serial.print(", ");
+    Serial.print(octave);
+    Serial.print(", ");
+    Serial.print(note);
+    Serial.print(", ");
+    Serial.print(channel);
+    Serial.print(", ");
+    Serial.print(voltage);
+    Serial.print(", ");
+    Serial.println(voct);
+
+    // for(int i = 0; i < VOICES; i++) {
+    //   opl2.playNote(i, octave, note);
+    // }
+
+    // opl2.playNote(channel, octave, note);
+    // channel++;
+    // if(channel >= VOICES) {
+    //   channel = 0;
+    // }
+
+    opl2.playNote(0, octave, note);
+    // opl2.playNote(1, fifth_octave, fifth);
+
+    last_note = ms;
+  }
 }
