@@ -50,6 +50,11 @@ uint8_t OCTAVE_BASE = 2;
 uint8_t channel = 0;
 int8_t currentInstrument = 0;
 
+uint8_t attack = 0;
+uint8_t decay = 0;
+uint8_t sustain = 0;
+uint8_t release = 0;
+
 Bounce presetNext = Bounce();
 Bounce presetPrev = Bounce();
 Bounce encoderSwitch = Bounce();
@@ -62,6 +67,7 @@ int8_t select_menu = 0; //
 
 void setInstrument();
 void updateEncoder();
+void updateADSR(int8_t byRef);
 
 void setup()
 {
@@ -119,30 +125,33 @@ void loop()
 
   if (encoderSwitch.changed() && encoderSwitch.read())
   {
-    Serial.println("Encoder Switch");
-  }
-
-  if (encoderDirection == RotaryEncoder::Direction::COUNTERCLOCKWISE)
-  { // turn left
-    oldPosition = newPosition;
-    select_menu--;
-    if (select_menu < 0)
-    {
-      select_menu = 3;
-    }
-    Serial.print("Encoder: Left, Menu: ");
-    Serial.println(select_menu);
-  }
-  else if (encoderDirection == RotaryEncoder::Direction::CLOCKWISE)
-  { // turn right
-    oldPosition = newPosition;
     select_menu++;
     if (select_menu > 3)
     {
       select_menu = 0;
     }
+    switch(select_menu) {
+      case 0: Serial.println("Attack"); break;
+      case 1: Serial.println("Decay"); break;
+      case 2: Serial.println("Sustain"); break;
+      case 3: Serial.println("Release"); break;
+    }
+  }
+
+  if (encoderDirection == RotaryEncoder::Direction::COUNTERCLOCKWISE)
+  { // turn left
+    oldPosition = newPosition;
+
+    Serial.print("Encoder: Left, Menu: ");
+    Serial.println(select_menu);
+    updateADSR(-1);
+  }
+  else if (encoderDirection == RotaryEncoder::Direction::CLOCKWISE)
+  { // turn right
+    oldPosition = newPosition;
     Serial.print("Encoder: Right, Menu: ");
     Serial.println(select_menu);
+    updateADSR(1);
   }
   else
   {
@@ -209,9 +218,52 @@ void setInstrument()
   Serial.print("Instrument: ");
   Serial.println(currentInstrument);
   Instrument piano = opl2.loadInstrument(inst); // Load a piano instrument.
+
+
   for (int i = 0; i < VOICES; i++)
   {
     opl2.setInstrument(i, piano); // Assign the instrument to OPL2 channel 0.
-    opl2.setVolume(i, CARRIER, 0x00);
+  }
+
+  attack = opl2.getAttack(0, CARRIER);
+  decay = opl2.getDecay(0, CARRIER);
+  sustain = opl2.getSustain(0, CARRIER);
+  release = opl2.getRelease(0, CARRIER);
+}
+
+void updateADSR(int8_t byRef) {
+  switch(select_menu) {
+    case 0: { // attack
+      attack += byRef;
+      if(attack > 16) attack = 16;
+      if(attack < 0) attack = 0;
+      opl2.setAttack(0, CARRIER, attack);
+      Serial.print("Attack: ");
+      Serial.println(attack);
+    } break;
+    case 1: { // decay 
+      decay += byRef;
+      if(decay > 15) decay = 16;
+      if(decay < 0) decay = 0;
+      opl2.setDecay(0, CARRIER, decay);
+      Serial.print("Decay: ");
+      Serial.println(decay);
+    } break;
+    case 2: { // sustain
+      sustain += byRef;
+      if(sustain > 16) sustain = 16;
+      if(sustain < 0) sustain = 0;
+      opl2.setSustain(0, CARRIER, sustain);
+      Serial.print("Sustain: ");
+      Serial.println(sustain);
+    }  break;
+    case 3: { // release
+      release += byRef;
+      if(release > 16) release = 16;
+      if(release < 0) release = 0;
+      opl2.setRelease(0, CARRIER, release);
+      Serial.print("Release: ");
+      Serial.println(release);
+    } break;
   }
 }
