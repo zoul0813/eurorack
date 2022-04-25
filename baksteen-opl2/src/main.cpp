@@ -23,13 +23,12 @@
 #include <midi_instruments.h>
 #include <Bounce2.h>
 #include <RotaryEncoder.h>
+#include <avdweb_AnalogReadFast.h>
 
-#define CV_VOCT A1
-#define CV_ATTACK A2
+
+#define DEBUG 1
+#define CV_VOCT A0
 #define CV_GATE 12
-#define CV_DECAY A3
-#define CV_SUSTAIN A4
-#define CV_RELEASE A5
 
 #define B_PRESET_NEXT 5
 #define B_PRESET_PREV 6
@@ -43,6 +42,8 @@
 
 OPL2 opl2;
 uint16_t voct = 2; // 0-1023
+byte playNote = 0;
+bool playedNote = false;
 bool last_gate = false;
 float VOLTAGE_OFFSET = 0.01;
 uint8_t OCTAVE_BASE = 2;
@@ -70,7 +71,9 @@ void updateADSR(int8_t byRef);
 
 void setup()
 {
+  #if DEBUG == 1
   Serial.begin(9600);
+  #endif
 
   presetNext.attach(B_PRESET_NEXT, INPUT_PULLUP);
   presetNext.interval(5);
@@ -91,8 +94,8 @@ void setup()
 
 void loop()
 {
-  uint32_t ms = millis();
-
+  bool gate = digitalRead(CV_GATE);
+  voct = analogRead(CV_VOCT);
   presetNext.update();
   presetPrev.update();
   encoderSwitch.update();
@@ -128,27 +131,33 @@ void loop()
     {
       select_menu = 0;
     }
+
+    #if DEBUG == 1
     switch(select_menu) {
       case 0: Serial.println("Attack"); break;
       case 1: Serial.println("Decay"); break;
       case 2: Serial.println("Sustain"); break;
       case 3: Serial.println("Release"); break;
     }
+    #endif
   }
 
   if (encoderDirection == RotaryEncoder::Direction::COUNTERCLOCKWISE)
   { // turn left
     oldPosition = newPosition;
-
+    #if DEBUG == 1
     Serial.print("Encoder: Left, Menu: ");
     Serial.println(select_menu);
+    #endif 
     updateADSR(-1);
   }
   else if (encoderDirection == RotaryEncoder::Direction::CLOCKWISE)
   { // turn right
     oldPosition = newPosition;
+    #if DEBUG == 1
     Serial.print("Encoder: Right, Menu: ");
     Serial.println(select_menu);
+    #endif
     updateADSR(1);
   }
   else
@@ -156,24 +165,27 @@ void loop()
     // Serial.print("Encoder: None, Menu: ");
   }
 
-  bool gate = digitalRead(CV_GATE);
-  if (gate && gate != last_gate)
+  if (gate && !playedNote && playNote > 16)
   {
-    voct = analogRead(CV_VOCT);
+    playNote = 0;
+    playedNote = true;
+    #if DEBUG == 1
     float voltage = voct * (5.0 / 1023.0);
+    #endif
 
     uint16_t semitone = map(voct, 0, 1023, 0, 61);
     uint8_t octave = semitone / 12;
     uint8_t note = semitone - (octave * 12);
-    uint8_t fifth_octave = octave;
-    uint8_t fifth = note + 7;
-    if (note > 12)
-    {
-      fifth_octave++;
-      fifth -= 12;
-    }
+    // uint8_t fifth_octave = octave;
+    // uint8_t fifth = note + 7;
+    // if (note > 12)
+    // {
+    //   fifth_octave++;
+    //   fifth -= 12;
+    // }
     octave += OCTAVE_BASE;
 
+    #if DEBUG == 1
     Serial.print("V/OCT: ");
 
     Serial.print(semitone);
@@ -187,6 +199,7 @@ void loop()
     Serial.print(voltage);
     Serial.print(", ");
     Serial.println(voct);
+    #endif
 
     // for(int i = 0; i < VOICES; i++) {
     //   opl2.playNote(i, octave, note);
@@ -201,6 +214,17 @@ void loop()
     opl2.playNote(0, octave, note);
     // opl2.playNote(1, fifth_octave, fifth);
   }
+  
+  // playNote = gate && !last_gate;
+  if(gate && last_gate) {
+    playNote++;
+  }
+
+  if(!gate) {
+    playedNote = false;
+    playNote = 0;
+  }
+
   last_gate = gate;
 }
 
@@ -212,8 +236,10 @@ void updateEncoder()
 void setInstrument()
 {
   const unsigned char *inst = midiInstruments[currentInstrument];
+  #if DEBUG == 1
   Serial.print("Instrument: ");
   Serial.println(currentInstrument);
+  #endif 
   Instrument piano = opl2.loadInstrument(inst); // Load a piano instrument.
 
 
@@ -235,32 +261,40 @@ void updateADSR(int8_t byRef) {
       if(attack > 16) attack = 16;
       if(attack < 0) attack = 0;
       opl2.setAttack(0, CARRIER, attack);
+      #if DEBUG == 1
       Serial.print("Attack: ");
       Serial.println(attack);
+      #endif
     } break;
     case 1: { // decay 
       decay += byRef;
       if(decay > 15) decay = 16;
       if(decay < 0) decay = 0;
       opl2.setDecay(0, CARRIER, decay);
+      #if DEBUG == 1
       Serial.print("Decay: ");
       Serial.println(decay);
+      #endif 
     } break;
     case 2: { // sustain
       sustain += byRef;
       if(sustain > 16) sustain = 16;
       if(sustain < 0) sustain = 0;
       opl2.setSustain(0, CARRIER, sustain);
+      #if DEBUG == 1
       Serial.print("Sustain: ");
       Serial.println(sustain);
+      #endif
     }  break;
     case 3: { // release
       release += byRef;
       if(release > 16) release = 16;
       if(release < 0) release = 0;
       opl2.setRelease(0, CARRIER, release);
+      #if DEBUG == 1
       Serial.print("Release: ");
       Serial.println(release);
+      #endif 
     } break;
   }
 }
