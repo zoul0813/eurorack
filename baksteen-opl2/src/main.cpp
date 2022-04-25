@@ -43,9 +43,7 @@
 
 OPL2 opl2;
 uint16_t voct = 2; // 0-1023
-uint16_t last_voctP = 2;
-uint16_t last_voctM = 2;
-uint32_t last_note = 0;
+bool last_gate = false;
 float VOLTAGE_OFFSET = 0.01;
 uint8_t OCTAVE_BASE = 2;
 uint8_t channel = 0;
@@ -59,7 +57,6 @@ uint8_t release = 0;
 Bounce presetNext = Bounce();
 Bounce presetPrev = Bounce();
 Bounce encoderSwitch = Bounce();
-Bounce cvGate = Bounce();
 RotaryEncoder *encoder = nullptr;
 
 int oldPosition = -999;
@@ -84,9 +81,6 @@ void setup()
   encoderSwitch.attach(ENCODER_SW, INPUT_PULLUP);
   encoderSwitch.interval(5);
 
-  cvGate.attach(CV_GATE, INPUT);
-  cvGate.interval(1);
-
   encoder = new RotaryEncoder(ENCODER_1, ENCODER_2, ENCODER_LATCH);
   attachInterrupt(digitalPinToInterrupt(ENCODER_1), updateEncoder, CHANGE);
   attachInterrupt(digitalPinToInterrupt(ENCODER_2), updateEncoder, CHANGE);
@@ -99,11 +93,9 @@ void loop()
 {
   uint32_t ms = millis();
 
-  voct = analogRead(CV_VOCT);
   presetNext.update();
   presetPrev.update();
   encoderSwitch.update();
-  cvGate.update();
 
   oldPosition = newPosition;
   newPosition = encoder->getPosition();
@@ -164,25 +156,24 @@ void loop()
     // Serial.print("Encoder: None, Menu: ");
   }
 
-  float voltage = voct * (5.0 / 1023.0);
-
-  uint16_t semitone = map(voct, 0, 1023, 0, 61);
-  uint8_t octave = semitone / 12;
-  uint8_t note = semitone - (octave * 12);
-  uint8_t fifth_octave = octave;
-  uint8_t fifth = note + 7;
-  if (note > 12)
+  bool gate = digitalRead(CV_GATE);
+  if (gate && gate != last_gate)
   {
-    fifth_octave++;
-    fifth -= 12;
-  }
-  octave += OCTAVE_BASE;
+    voct = analogRead(CV_VOCT);
+    float voltage = voct * (5.0 / 1023.0);
 
-  // if (voct > 0 && (voct < last_voctM || voct > last_voctP))
-  if (cvGate.changed() && cvGate.read())
-  {
-    last_voctM = voct - 2;
-    last_voctP = voct + 2;
+    uint16_t semitone = map(voct, 0, 1023, 0, 61);
+    uint8_t octave = semitone / 12;
+    uint8_t note = semitone - (octave * 12);
+    uint8_t fifth_octave = octave;
+    uint8_t fifth = note + 7;
+    if (note > 12)
+    {
+      fifth_octave++;
+      fifth -= 12;
+    }
+    octave += OCTAVE_BASE;
+
     Serial.print("V/OCT: ");
 
     Serial.print(semitone);
@@ -209,9 +200,8 @@ void loop()
 
     opl2.playNote(0, octave, note);
     // opl2.playNote(1, fifth_octave, fifth);
-
-    last_note = ms;
   }
+  last_gate = gate;
 }
 
 void updateEncoder()
