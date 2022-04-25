@@ -26,6 +26,7 @@
 
 #define CV_VOCT A1
 #define CV_ATTACK A2
+#define CV_GATE 12
 #define CV_DECAY A3
 #define CV_SUSTAIN A4
 #define CV_RELEASE A5
@@ -58,6 +59,7 @@ uint8_t release = 0;
 Bounce presetNext = Bounce();
 Bounce presetPrev = Bounce();
 Bounce encoderSwitch = Bounce();
+Bounce cvGate = Bounce();
 RotaryEncoder *encoder = nullptr;
 
 int oldPosition = -999;
@@ -82,6 +84,9 @@ void setup()
   encoderSwitch.attach(ENCODER_SW, INPUT_PULLUP);
   encoderSwitch.interval(5);
 
+  cvGate.attach(CV_GATE, INPUT);
+  cvGate.interval(1);
+
   encoder = new RotaryEncoder(ENCODER_1, ENCODER_2, ENCODER_LATCH);
   attachInterrupt(digitalPinToInterrupt(ENCODER_1), updateEncoder, CHANGE);
   attachInterrupt(digitalPinToInterrupt(ENCODER_2), updateEncoder, CHANGE);
@@ -98,6 +103,7 @@ void loop()
   presetNext.update();
   presetPrev.update();
   encoderSwitch.update();
+  cvGate.update();
 
   oldPosition = newPosition;
   newPosition = encoder->getPosition();
@@ -172,7 +178,8 @@ void loop()
   }
   octave += OCTAVE_BASE;
 
-  if (voct > 0 && (voct < last_voctM || voct > last_voctP))
+  // if (voct > 0 && (voct < last_voctM || voct > last_voctP))
+  if (cvGate.changed() && cvGate.read())
   {
     last_voctM = voct - 2;
     last_voctP = voct + 2;
