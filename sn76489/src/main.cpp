@@ -43,7 +43,8 @@ bool last_gate = false;
 float VOLTAGE_OFFSET = 0.01;
 uint8_t OCTAVE_BASE = 1;
 
-void setup() {
+void setup()
+{
   // immediately quiet all channels
   chip.setAttenuation(0, 0xF);
   chip.setAttenuation(1, 0xF);
@@ -60,7 +61,7 @@ void loop()
   voct = analogRead(CV_VOCT);
   mod = analogRead(CV_MOD);
 
-    if (gate && !playedNote && playNote > 16)
+  if (gate && !playedNote && playNote > 64)
   {
     playNote = 0;
     playedNote = true;
@@ -101,28 +102,34 @@ void loop()
     #endif
 
     // opl2.playNote(0, octave, note);
-    for(byte i = 0; i < 3; i++) {
+    for (byte i = 0; i < 3; i++)
+    {
       chip.setAttenuation(i, 0x0);
-      chip.setFrequency(i, frequency - (i * 2));
+      chip.setFrequency(i, frequency - (i * 6));
     }
   }
-  
-  if(gate && last_gate) {
+
+  if (gate && last_gate)
+  {
     playNote++;
   }
 
-  if(!gate) {
+  if (!gate)
+  {
     playedNote = false;
     playNote = 0;
-    if(last_gate) {
+    if (last_gate)
+    {
       // opl2.setKeyOn(0, false);
-      for(byte i = 0; i < 4; i++) {
+      for (byte i = 0; i < 4; i++)
+      {
         chip.setAttenuation(i, 0xF);
       }
     }
   }
 
-  if(mod < 512 && last_mod > 512) {
+  if (mod < 512 && last_mod > 512)
+  {
     // opl2.setDeepTremolo(tremelo);
     // opl2.setDeepTremolo(vibrato);
   }
