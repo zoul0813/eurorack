@@ -1,6 +1,10 @@
 #include <RotaryEncoder.h>
 
+#ifndef __CONFIG_H
+#define __CONFIG_H
+
 #define DEBUG 1
+#define DEBUG_VERBOSE 0
 #define VERSION "0.0.3-alpha"
 #define CV_VOCT A0
 #define CV_MOD A1
@@ -31,3 +35,5 @@
 #define ENCODER_LATCH RotaryEncoder::LatchMode::FOUR3
 
 #define VOICES 6
+
+#endif
