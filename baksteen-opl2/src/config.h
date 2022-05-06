@@ -7,7 +7,8 @@
 #define DEBUG_VERBOSE 0
 #define VERSION "0.0.3-alpha"
 #define CV_VOCT A0
-#define CV_MOD A1
+#define CV_CV1 A1
+#define CV_CV2 A2
 // #define CV_GATE 12
 
 // 74hc165 pins       Nano                  | 74hc165
@@ -35,5 +36,8 @@
 #define ENCODER_LATCH RotaryEncoder::LatchMode::FOUR3
 
 #define VOICES 6
+
+#define MODE_POLY 0
+#define MODE_RYTHM 1
 
 #endif

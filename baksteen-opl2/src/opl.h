@@ -4,7 +4,12 @@
 #include "config.h"
 #include "globals.h"
 
+#ifndef __OPL_H
+#define __OPL_H
 OPL2 opl2;
+// uint16_t semitone = 0;
+// uint8_t octave = 0;
+// uint8_t note = 0;
 
 // the +2 should be compiled out
 #define isGate(bit) !(((gates) >> (bit)) & 0x01)
@@ -12,6 +17,12 @@ OPL2 opl2;
 
 void oplInit();
 void oplProcess(uint8_t gates);
+void doStopNote(uint8_t gates, uint8_t voice);
+void shouldPlayNote(uint8_t gates, uint8_t voice);
+void doPlayNote(uint8_t gates, uint8_t voice, uint16_t on);
+void doRhythm(uint8_t gates);
+void doPoly(uint8_t gates);
+uint16_t voltToNote(uint16_t v);
 void setInstrument();
 void nextInstrument();
 void prevInstrument();
@@ -39,40 +50,121 @@ void oplInit() {
 }
 
 void oplProcess(uint8_t gates) {
-  for (uint8_t voice = 0; voice < VOICES; voice++)
-  {
+  voct = analogRead(CV_VOCT);
+  cv1 = analogRead(CV_CV1);
+  cv2 = analogRead(CV_CV2);
 
-    if (isGate(voice) && !playedNote[voice]) //  && playNote[voice] > 16)
-    {
-      playNote[voice] = 0;
-      playedNote[voice] = true;
-      opl2.playNote(voice, octave, note);
-    }
+  Serial.print(voct);
+  Serial.print(", ");
+  Serial.print(cv1);
+  Serial.print(", ");
+  Serial.print(cv2);
+  Serial.println("");
 
-    if (isGate(voice) && last_gate[voice])
-    {
-      playNote[voice]++;
-    }
+#if DEBUG_VERBOSE == 1
+  float voltage = voct * (5.0 / 1023.0);
+#endif
 
-    if (notGate(voice))
-    {
-      playedNote[voice] = false;
-      playNote[voice] = 0;
-      if (last_gate[voice])
-      {
-        opl2.setKeyOn(voice, false);
-      }
-    }
-    last_gate[voice] = isGate(voice);
+#if DEBUG_VERBOSE == 1
+  if(isGate(0)) {
+    Serial.print("V/OCT: ");
+
+    Serial.print(semitone);
+    Serial.print(", ");
+    Serial.print(octave);
+    Serial.print(", ");
+    Serial.print(note);
+    Serial.print(", ");
+    Serial.print(channel);
+    Serial.print(", ");
+    Serial.print(mod);
+    Serial.print(", ");
+    Serial.print(voltage);
+    Serial.print(", ");
+    Serial.println(voct);
+  }
+#endif
+
+  switch(currentMode) {
+    case MODE_POLY: return doPoly(gates);
+    case MODE_RYTHM: return doRhythm(gates);
   }
 
-  if (mod < 512 && last_mod > 512)
+}
+
+void doPlayNote(uint8_t gates, uint8_t voice, uint16_t on)
+{
+  if (isGate(voice) && !playedNote[voice]) //  && playNote[voice] > 16)
   {
-    #if DEBUG == 1
-      Serial.println("Deep Vibrato/Tremolo");
-    #endif
-    opl2.setDeepTremolo(tremelo);
-    opl2.setDeepVibrato(vibrato);
+    uint8_t octave = (on >> 8) & 0xFF;
+    uint8_t note = on & 0xFF;
+    Serial.print("Octave: ");
+    Serial.print(octave);
+    Serial.print(", Note: ");
+    Serial.println(note);
+
+    playNote[voice] = 0;
+    playedNote[voice] = true;
+    opl2.playNote(voice, octave, note);
+  }
+}
+
+void shouldPlayNote(uint8_t gates, uint8_t voice)
+{
+  if (isGate(voice) && last_gate[voice])
+  {
+    playNote[voice]++;
+  }
+}
+
+void doStopNote(uint8_t gates, uint8_t voice)
+{
+  if (notGate(voice))
+  {
+    playedNote[voice] = false;
+    playNote[voice] = 0;
+    if (last_gate[voice])
+    {
+      opl2.setKeyOn(voice, false);
+    }
+  }
+}
+
+uint16_t voltToNote(uint16_t v)
+{
+  uint16_t semitone = map(v, 0, 1023, 0, 61);
+  uint8_t octave = semitone / 12;
+  uint8_t note = semitone - (octave * 12);
+  octave += OCTAVE_BASE;
+  return (octave << 8) | note;
+}
+
+void doPoly(uint8_t gates) 
+{
+  doPlayNote(gates, 0, voltToNote(voct));
+  shouldPlayNote(gates, 0);
+  doStopNote(gates, 0);
+  last_gate[0] = isGate(0);
+
+  doPlayNote(gates, 1, voltToNote(cv1));
+  shouldPlayNote(gates, 1);
+  doStopNote(gates, 1);
+  last_gate[1] = isGate(1);
+
+  doPlayNote(gates, 4, voltToNote(cv2));
+  shouldPlayNote(gates, 4);
+  doStopNote(gates, 4);
+  last_gate[4] = isGate(4);
+}
+
+void doRhythm(uint8_t gates) 
+{
+  for (uint8_t voice = 0; voice < VOICES; voice++)
+  {
+    doPlayNote(gates, voice, voltToNote(voct));
+    shouldPlayNote(gates, voice);
+    doStopNote(gates, voice);
+    last_gate[voice] = isGate(voice);
   }
 }
 
@@ -221,3 +313,4 @@ void updateADSR(int8_t byRef)
   }
 }
 
+#endif

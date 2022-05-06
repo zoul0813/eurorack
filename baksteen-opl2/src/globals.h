@@ -6,17 +6,13 @@
 #ifndef __VARS_H
 #define __VARS_H
 
-
-uint16_t semitone = 0;
-uint8_t octave = 0;
-uint8_t note = 0;
+uint8_t currentMode = MODE_POLY;
 uint16_t voct = 0; // 0-1023
-uint16_t mod = 0;
-uint16_t last_mod = 0;
+uint16_t cv1 = 0;
+uint16_t cv2 = 0;
 byte playNote[VOICES] = {0, 0, 0, 0, 0, 0};
 bool playedNote[VOICES] = { false, false, false, false, false, false, };
 bool last_gate[VOICES] = { false, false, false, false, false, false, };
-
 
 byte last_inputs = B00000000;
 
