@@ -34,7 +34,7 @@ void oplInit() {
   currentInstrument = 0;
   setInstrument();
 
-  if(currentInstrument == MODE_RHYTHM) {
+  if(currentMode == MODE_RHYTHM) {
     Instrument instrument = opl2.loadInstrument(INSTRUMENT_SHANNAI); // Load a piano instrument.
     opl2.setInstrument(1, instrument);                  // Assign the instrument to OPL2 channel 0.
 

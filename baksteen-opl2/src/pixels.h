@@ -26,6 +26,18 @@ void updatePixels(uint8_t inputs)
     }
   }
 
+  switch(currentMode) {
+    case MODE_POLY: {
+      pixels.setPixelColor(0, NEOPIXEL_POLY);
+    } break;
+    case MODE_RHYTHM: {
+      pixels.setPixelColor(0, NEOPIXEL_RHYTHM);
+    } break;
+    case MODE_CHORD: {
+      pixels.setPixelColor(0, NEOPIXEL_CHORD);
+    };
+  }
+
   pixels.show(); // Send the updated pixel colors to the hardware.
 }
 

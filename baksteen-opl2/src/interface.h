@@ -37,6 +37,15 @@ void interfaceProcess(uint8_t gates) {
   if (presetPrev && !lastPresetPrev)
     prevInstrument();
 
+  if (encoderSwitch.changed() && encoderSwitch.read())
+  {
+    // 0 = Poly, 1 = Rhythm, 2 = Chord
+    currentMode++;
+    if (currentMode > 2)
+    {
+      currentMode = 0;
+    }
+  }
   updatePixels(gates);
 }
 
@@ -52,39 +61,6 @@ void updateEncoder()
   oldPosition = newPosition;
   newPosition = encoder->getPosition();
   RotaryEncoder::Direction encoderDirection = encoder->getDirection();
-
-  if (encoderSwitch.changed() && encoderSwitch.read())
-  {
-    select_menu++;
-    if (select_menu > 5)
-    {
-      select_menu = 0;
-    }
-
-#if DEBUG == 1
-    switch (select_menu)
-    {
-    case 0:
-      Serial.println("Attack");
-      break;
-    case 1:
-      Serial.println("Decay");
-      break;
-    case 2:
-      Serial.println("Sustain");
-      break;
-    case 3:
-      Serial.println("Release");
-      break;
-    case 4:
-      Serial.println("Tremelo");
-      break;
-    case 5:
-      Serial.println("Vibrato");
-      break;
-    }
-#endif
-  }
 
   if (encoderDirection == RotaryEncoder::Direction::COUNTERCLOCKWISE)
   { // turn left
