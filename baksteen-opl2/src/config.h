@@ -3,7 +3,7 @@
 #ifndef __CONFIG_H
 #define __CONFIG_H
 
-#define DEBUG 1
+#define DEBUG 0
 #define DEBUG_VERBOSE 0
 #define VERSION "0.0.3-alpha"
 #define CV_VOCT A0
@@ -38,6 +38,13 @@
 #define VOICES 6
 
 #define MODE_POLY 0
-#define MODE_RYTHM 1
+#define MODE_RHYTHM 1
+#define MODE_DEFAULT MODE_RHYTHM
+
+#define NEOPIXEL_PIN 0 // On Trinket or Gemma, suggest changing this to 1
+#define NEOPIXEL_NUM 8 // Popular NeoPixel ring size
+
+#define NEOPIXEL_RHYTHM pixels.Color(244, 27, 63) // pink
+#define NEOPIXEL_POLY pixels.Color(38,156,98) // light green?
 
 #endif

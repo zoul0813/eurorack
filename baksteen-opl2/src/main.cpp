@@ -23,19 +23,21 @@
 #include <OPL2.h>
 #include <Bounce2.h>
 #include <RotaryEncoder.h>
+#include <Adafruit_NeoPixel.h>
 
 #include "config.h"
 #include "globals.h"
 #include "opl.h"
 #include "shift.h"
 #include "interface.h"
+#include "pixels.h"
 
 void encoderISR();
 void updateEncoder();
 
-
 void setup()
 {
+  pixelsInit();
   oplInit();
 
 #if DEBUG == 1
@@ -53,13 +55,13 @@ void loop()
 {
   byte inputs = getShift();
 
-  if(inputs != last_inputs) {
+  if (inputs != last_inputs)
+  {
     // shift off the next/prev buttons, we only have 6 gates
     // TODO: reverse this so the gates are first 6 bits, remove this shift?
     oplProcess(inputs >> 2);
   }
-  
-  interfaceProcess(inputs);
 
+  interfaceProcess(inputs);
   last_inputs = inputs;
 }

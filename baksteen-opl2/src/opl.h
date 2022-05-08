@@ -31,21 +31,25 @@ void updateADSR(int8_t byRef);
 
 void oplInit() {
   opl2.begin();
+  currentInstrument = 0;
   setInstrument();
-  Instrument instrument = opl2.loadInstrument(INSTRUMENT_SYNDRUM); // Load a piano instrument.
-  opl2.setInstrument(1, instrument);                  // Assign the instrument to OPL2 channel 0.
 
-  instrument = opl2.loadInstrument(INSTRUMENT_SHANNAI); // Load a piano instrument.
-  opl2.setInstrument(2, instrument);                  // Assign the instrument to OPL2 channel 0.
+  if(currentInstrument == MODE_RHYTHM) {
+    Instrument instrument = opl2.loadInstrument(INSTRUMENT_SHANNAI); // Load a piano instrument.
+    opl2.setInstrument(1, instrument);                  // Assign the instrument to OPL2 channel 0.
 
-  instrument = opl2.loadInstrument(INSTRUMENT_TAIKO); // Load a piano instrument.
-  opl2.setInstrument(3, instrument);                  // Assign the instrument to OPL2 channel 0.
+    instrument = opl2.loadInstrument(INSTRUMENT_CRYSTAL); // Load a piano instrument.
+    opl2.setInstrument(2, instrument);                  // Assign the instrument to OPL2 channel 0.
 
-  instrument = opl2.loadInstrument(INSTRUMENT_WOODBLOK); // Load a piano instrument.
-  opl2.setInstrument(4, instrument);                  // Assign the instrument to OPL2 channel 0.
+    instrument = opl2.loadInstrument(INSTRUMENT_TAIKO); // Load a piano instrument.
+    opl2.setInstrument(3, instrument);                  // Assign the instrument to OPL2 channel 0.
 
-  instrument = opl2.loadInstrument(INSTRUMENT_STEELDRM); // Load a piano instrument.
-  opl2.setInstrument(5, instrument);                  // Assign the instrument to OPL2 channel 0.
+    instrument = opl2.loadInstrument(INSTRUMENT_WOODBLOK); // Load a piano instrument.
+    opl2.setInstrument(4, instrument);                  // Assign the instrument to OPL2 channel 0.
+
+    instrument = opl2.loadInstrument(INSTRUMENT_STEELDRM); // Load a piano instrument.
+    opl2.setInstrument(5, instrument);                  // Assign the instrument to OPL2 channel 0.
+  } 
   delay(100);
 }
 
@@ -54,12 +58,12 @@ void oplProcess(uint8_t gates) {
   cv1 = analogRead(CV_CV1);
   cv2 = analogRead(CV_CV2);
 
-  Serial.print(voct);
-  Serial.print(", ");
-  Serial.print(cv1);
-  Serial.print(", ");
-  Serial.print(cv2);
-  Serial.println("");
+  // Serial.print(voct);
+  // Serial.print(", ");
+  // Serial.print(cv1);
+  // Serial.print(", ");
+  // Serial.print(cv2);
+  // Serial.println("");
 
 #if DEBUG_VERBOSE == 1
   float voltage = voct * (5.0 / 1023.0);
@@ -69,16 +73,16 @@ void oplProcess(uint8_t gates) {
   if(isGate(0)) {
     Serial.print("V/OCT: ");
 
-    Serial.print(semitone);
-    Serial.print(", ");
-    Serial.print(octave);
-    Serial.print(", ");
-    Serial.print(note);
-    Serial.print(", ");
-    Serial.print(channel);
-    Serial.print(", ");
-    Serial.print(mod);
-    Serial.print(", ");
+    // Serial.print(semitone);
+    // Serial.print(", ");
+    // Serial.print(octave);
+    // Serial.print(", ");
+    // Serial.print(note);
+    // Serial.print(", ");
+    // Serial.print(channel);
+    // Serial.print(", ");
+    // Serial.print(mod);
+    // Serial.print(", ");
     Serial.print(voltage);
     Serial.print(", ");
     Serial.println(voct);
@@ -87,7 +91,7 @@ void oplProcess(uint8_t gates) {
 
   switch(currentMode) {
     case MODE_POLY: return doPoly(gates);
-    case MODE_RYTHM: return doRhythm(gates);
+    case MODE_RHYTHM: return doRhythm(gates);
   }
 
 }
@@ -172,7 +176,7 @@ void setInstrument()
 {
   for (int i = 0; i < VOICES; i++)
   {
-    int8_t load = currentInstrument + (i * 3);
+    int8_t load = currentInstrument + (currentMode == MODE_RHYTHM ? (i * 3) : 0);
     if (load > 127)
     {
       load -= 127;

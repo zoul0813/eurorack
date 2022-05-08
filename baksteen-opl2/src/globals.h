@@ -6,7 +6,7 @@
 #ifndef __VARS_H
 #define __VARS_H
 
-uint8_t currentMode = MODE_POLY;
+uint8_t currentMode = MODE_DEFAULT;
 uint16_t voct = 0; // 0-1023
 uint16_t cv1 = 0;
 uint16_t cv2 = 0;
@@ -39,4 +39,6 @@ int oldPosition = -999;
 int newPosition = -999;
 int i = 0;
 int8_t select_menu = 0; //
+
+Adafruit_NeoPixel pixels(NEOPIXEL_NUM, NEOPIXEL_PIN, NEO_GRB + NEO_KHZ800);
 #endif

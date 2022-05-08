@@ -3,6 +3,7 @@
 #include "globals.h"
 #include "opl.h"
 #include "shift.h"
+#include "pixels.h"
 
 #ifndef __INTERFACE_H
 #define __INTERFACE_H
@@ -35,6 +36,8 @@ void interfaceProcess(uint8_t gates) {
 
   if (presetPrev && !lastPresetPrev)
     prevInstrument();
+
+  updatePixels(gates);
 }
 
 void encoderISR()
