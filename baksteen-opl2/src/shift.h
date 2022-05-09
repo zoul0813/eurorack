@@ -7,7 +7,6 @@
 
 void shiftInit();
 byte getShift();
-void setShift(byte b);
 
 void shiftInit() {
   pinMode(SHIFT_CLK, OUTPUT);
@@ -15,7 +14,6 @@ void shiftInit() {
   pinMode(SHIFT_LOAD, OUTPUT);
   pinMode(SHIFT_DATA, INPUT);
 }
-
 
 byte getShift()
 {
@@ -28,15 +26,6 @@ byte getShift()
   digitalWrite(SHIFT_CLKIN, LOW);
   byte b = shiftIn(SHIFT_DATA, SHIFT_CLK, LSBFIRST);
   digitalWrite(SHIFT_CLKIN, HIGH);
-#if DEBUG_VERBOSE == 1
-  Serial.print("Shift: ");
-  Serial.println(v, BIN);
-#endif
   return b;
 }
-
-void setShift(byte b) {
-  // shift the data out 
-}
-
 #endif

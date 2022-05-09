@@ -40,12 +40,6 @@ void setup()
   pixelsInit();
   oplInit();
 
-#if DEBUG == 1
-  Serial.begin(115200);
-  Serial.print("OPL2 Eurorack Module - ");
-  Serial.println(VERSION);
-#endif
-
   // setup 74hc165 pins
   shiftInit();
   interfaceInit();

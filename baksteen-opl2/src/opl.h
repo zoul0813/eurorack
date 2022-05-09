@@ -17,13 +17,14 @@ OPL2 opl2;
 
 void oplInit();
 void oplProcess(uint8_t gates);
-void doStopNote(uint8_t gates, uint8_t voice);
-void shouldPlayNote(uint8_t gates, uint8_t voice);
-void doPlayNote(uint8_t gates, uint8_t voice, uint16_t on);
+bool doStopNote(uint8_t gates, uint8_t voice);
+bool shouldPlayNote(uint8_t gates, uint8_t voice);
+bool doPlayNote(uint8_t gates, uint8_t voice, uint16_t on);
 void doRhythm(uint8_t gates);
 void doPoly(uint8_t gates);
+void doChord(uint8_t gates);
 uint16_t voltToNote(uint16_t v);
-void setInstrument();
+void setInstrument(uint8_t index);
 void nextInstrument();
 void prevInstrument();
 void updateInstrument();
@@ -32,24 +33,37 @@ void updateADSR(int8_t byRef);
 void oplInit() {
   opl2.begin();
   currentInstrument = 0;
-  setInstrument();
 
-  if(currentMode == MODE_RHYTHM) {
-    Instrument instrument = opl2.loadInstrument(INSTRUMENT_SHANNAI); // Load a piano instrument.
-    opl2.setInstrument(1, instrument);                  // Assign the instrument to OPL2 channel 0.
+  switch(currentMode) {
+    case MODE_POLY: {
+      Instrument instrument = opl2.loadInstrument(INSTRUMENT_CRYSTAL); // Load a piano instrument.
+      for(int i = 0; i < 9; i++) {
+        opl2.setInstrument(i, instrument);                  // Assign the instrument to O
+      }
+    } break;
+    case MODE_RHYTHM: {
+      Instrument instrument = opl2.loadInstrument(INSTRUMENT_SHANNAI); // Load a piano instrument.
+      opl2.setInstrument(1, instrument);                  // Assign the instrument to OPL2 channel 0.
 
-    instrument = opl2.loadInstrument(INSTRUMENT_CRYSTAL); // Load a piano instrument.
-    opl2.setInstrument(2, instrument);                  // Assign the instrument to OPL2 channel 0.
+      instrument = opl2.loadInstrument(INSTRUMENT_CRYSTAL); // Load a piano instrument.
+      opl2.setInstrument(2, instrument);                  // Assign the instrument to OPL2 channel 0.
 
-    instrument = opl2.loadInstrument(INSTRUMENT_TAIKO); // Load a piano instrument.
-    opl2.setInstrument(3, instrument);                  // Assign the instrument to OPL2 channel 0.
+      instrument = opl2.loadInstrument(INSTRUMENT_TAIKO); // Load a piano instrument.
+      opl2.setInstrument(3, instrument);                  // Assign the instrument to OPL2 channel 0.
 
-    instrument = opl2.loadInstrument(INSTRUMENT_WOODBLOK); // Load a piano instrument.
-    opl2.setInstrument(4, instrument);                  // Assign the instrument to OPL2 channel 0.
+      instrument = opl2.loadInstrument(INSTRUMENT_WOODBLOK); // Load a piano instrument.
+      opl2.setInstrument(4, instrument);                  // Assign the instrument to OPL2 channel 0.
 
-    instrument = opl2.loadInstrument(INSTRUMENT_STEELDRM); // Load a piano instrument.
-    opl2.setInstrument(5, instrument);                  // Assign the instrument to OPL2 channel 0.
-  } 
+      instrument = opl2.loadInstrument(INSTRUMENT_STEELDRM); // Load a piano instrument.
+      opl2.setInstrument(5, instrument);                  // Assign the instrument to OPL2 channel 0.
+    } break;
+    case MODE_CHORD: {
+      Instrument instrument = opl2.loadInstrument(INSTRUMENT_VIOLIN); // Load a piano instrument.
+      for(int i = 0; i < 9; i++) {
+        opl2.setInstrument(i, instrument);                  // Assign the instrument to O
+      }
+    } break;
+  }
   delay(100);
 }
 
@@ -58,70 +72,39 @@ void oplProcess(uint8_t gates) {
   cv1 = analogRead(CV_CV1);
   cv2 = analogRead(CV_CV2);
 
-  // Serial.print(voct);
-  // Serial.print(", ");
-  // Serial.print(cv1);
-  // Serial.print(", ");
-  // Serial.print(cv2);
-  // Serial.println("");
-
-#if DEBUG_VERBOSE == 1
-  float voltage = voct * (5.0 / 1023.0);
-#endif
-
-#if DEBUG_VERBOSE == 1
-  if(isGate(0)) {
-    Serial.print("V/OCT: ");
-
-    // Serial.print(semitone);
-    // Serial.print(", ");
-    // Serial.print(octave);
-    // Serial.print(", ");
-    // Serial.print(note);
-    // Serial.print(", ");
-    // Serial.print(channel);
-    // Serial.print(", ");
-    // Serial.print(mod);
-    // Serial.print(", ");
-    Serial.print(voltage);
-    Serial.print(", ");
-    Serial.println(voct);
-  }
-#endif
-
   switch(currentMode) {
     case MODE_POLY: return doPoly(gates);
     case MODE_RHYTHM: return doRhythm(gates);
+    case MODE_CHORD: return doChord(gates);
   }
 
 }
 
-void doPlayNote(uint8_t gates, uint8_t voice, uint16_t on)
+bool doPlayNote(uint8_t gates, uint8_t voice, uint16_t on)
 {
   if (isGate(voice) && !playedNote[voice]) //  && playNote[voice] > 16)
   {
     uint8_t octave = (on >> 8) & 0xFF;
     uint8_t note = on & 0xFF;
-    Serial.print("Octave: ");
-    Serial.print(octave);
-    Serial.print(", Note: ");
-    Serial.println(note);
 
     playNote[voice] = 0;
     playedNote[voice] = true;
     opl2.playNote(voice, octave, note);
+    return true;
   }
+  return false;
 }
 
-void shouldPlayNote(uint8_t gates, uint8_t voice)
+bool shouldPlayNote(uint8_t gates, uint8_t voice)
 {
   if (isGate(voice) && last_gate[voice])
   {
     playNote[voice]++;
   }
+  return playNote[voice] > 16; // TODO: make this variable, or constant?
 }
 
-void doStopNote(uint8_t gates, uint8_t voice)
+bool doStopNote(uint8_t gates, uint8_t voice)
 {
   if (notGate(voice))
   {
@@ -130,8 +113,10 @@ void doStopNote(uint8_t gates, uint8_t voice)
     if (last_gate[voice])
     {
       opl2.setKeyOn(voice, false);
+      return true;
     }
   }
+  return false;
 }
 
 uint16_t voltToNote(uint16_t v)
@@ -155,10 +140,10 @@ void doPoly(uint8_t gates)
   doStopNote(gates, 1);
   last_gate[1] = isGate(1);
 
-  doPlayNote(gates, 4, voltToNote(cv2));
-  shouldPlayNote(gates, 4);
-  doStopNote(gates, 4);
-  last_gate[4] = isGate(4);
+  doPlayNote(gates, 2, voltToNote(cv2));
+  shouldPlayNote(gates, 2);
+  doStopNote(gates, 2);
+  last_gate[4] = isGate(2);
 }
 
 void doRhythm(uint8_t gates) 
@@ -172,11 +157,39 @@ void doRhythm(uint8_t gates)
   }
 }
 
-void setInstrument()
+void doChord(uint8_t gates)
+{
+  uint16_t on = voltToNote(voct);
+  if(doPlayNote(gates, 0, on)) {
+    uint8_t octave = (on >> 8) & 0xFF;
+    uint8_t note = on & 0xFF;
+    uint8_t third = note + 4;
+    if(note > 11) {
+      third -= 11;
+      octave++;
+    }
+    opl2.playNote(1, octave, third);
+
+    uint8_t fifth = third + 3;
+    if(note > 11) {
+      fifth -= 11;
+      octave++;
+    }
+    opl2.playNote(3, octave, fifth);
+  }
+  shouldPlayNote(gates, 0);
+  if(doStopNote(gates, 0)) {
+    opl2.setKeyOn(1, false);
+    opl2.setKeyOn(2, false);
+  }
+  last_gate[0] = isGate(0);
+}
+
+void setInstrument(uint8_t index)
 {
   for (int i = 0; i < VOICES; i++)
   {
-    int8_t load = currentInstrument + (currentMode == MODE_RHYTHM ? (i * 3) : 0);
+    int8_t load = index + (currentMode == MODE_RHYTHM ? (i * 4) : 0);
     if (load > 127)
     {
       load -= 127;
@@ -193,27 +206,6 @@ void setInstrument()
   release = opl2.getRelease(0, CARRIER);
   tremelo = opl2.getTremolo(0, CARRIER);
   vibrato = opl2.getVibrato(0, CARRIER);
-
-#if DEBUG == 1
-  Serial.print("Instrument: ");
-  Serial.print(currentInstrument);
-  // Serial.print(" (");
-  // Serial.print(midiInstrumentNames[currentInstrument]);
-  Serial.print(") ");
-  Serial.print(" - A: ");
-  Serial.print(attack);
-  Serial.print(", D: ");
-  Serial.print(decay);
-  Serial.print(", S: ");
-  Serial.print(sustain);
-  Serial.print(", R: ");
-  Serial.print(release);
-  Serial.print(", T: ");
-  Serial.print(tremelo);
-  Serial.print(", V: ");
-  Serial.print(vibrato);
-  Serial.println("");
-#endif
 }
 
 void nextInstrument() {
@@ -222,7 +214,7 @@ void nextInstrument() {
   {
     currentInstrument = 0;
   }
-  setInstrument();
+  setInstrument(currentInstrument);
 }
 
 void prevInstrument() {
@@ -231,7 +223,7 @@ void prevInstrument() {
   {
     currentInstrument = 127;
   }
-  setInstrument();
+  setInstrument(currentInstrument);
 }
 
 void updateADSR(int8_t byRef)
@@ -246,10 +238,6 @@ void updateADSR(int8_t byRef)
     if (attack < 0)
       attack = 0;
     opl2.setAttack(0, CARRIER, attack);
-#if DEBUG == 1
-    Serial.print("Attack: ");
-    Serial.println(attack);
-#endif
   }
   break;
   case 1:
@@ -260,10 +248,6 @@ void updateADSR(int8_t byRef)
     if (decay < 0)
       decay = 0;
     opl2.setDecay(0, CARRIER, decay);
-#if DEBUG == 1
-    Serial.print("Decay: ");
-    Serial.println(decay);
-#endif
   }
   break;
   case 2:
@@ -274,10 +258,6 @@ void updateADSR(int8_t byRef)
     if (sustain < 0)
       sustain = 0;
     opl2.setSustain(0, CARRIER, sustain);
-#if DEBUG == 1
-    Serial.print("Sustain: ");
-    Serial.println(sustain);
-#endif
   }
   break;
   case 3:
@@ -288,30 +268,18 @@ void updateADSR(int8_t byRef)
     if (release < 0)
       release = 0;
     opl2.setRelease(0, CARRIER, release);
-#if DEBUG == 1
-    Serial.print("Release: ");
-    Serial.println(release);
-#endif
   }
   break;
   case 4:
   { 
     tremelo = !tremelo;
     opl2.setTremolo(0, CARRIER, tremelo);
-#if DEBUG == 1
-    Serial.print("Tremelo: ");
-    Serial.println(tremelo);
-#endif
   }
   break;
   case 5:
   { 
     vibrato = !vibrato;
     opl2.setVibrato(0, CARRIER, vibrato);
-#if DEBUG == 1
-    Serial.print("Vibrato: ");
-    Serial.println(vibrato);
-#endif
   }
   break;
   }

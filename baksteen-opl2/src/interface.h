@@ -45,6 +45,7 @@ void interfaceProcess(uint8_t gates) {
     {
       currentMode = 0;
     }
+    oplInit();
   }
   updatePixels(gates);
 }
@@ -65,24 +66,15 @@ void updateEncoder()
   if (encoderDirection == RotaryEncoder::Direction::COUNTERCLOCKWISE)
   { // turn left
     oldPosition = newPosition;
-#if DEBUG == 1
-    Serial.print("Encoder: Left, Menu: ");
-    Serial.println(select_menu);
-#endif
     updateADSR(-1);
   }
   else if (encoderDirection == RotaryEncoder::Direction::CLOCKWISE)
   { // turn right
     oldPosition = newPosition;
-#if DEBUG == 1
-    Serial.print("Encoder: Right, Menu: ");
-    Serial.println(select_menu);
-#endif
     updateADSR(1);
   }
   else
   {
-    // Serial.print("Encoder: None, Menu: ");
   }
 }
 
