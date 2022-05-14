@@ -72,6 +72,18 @@ void oplProcess(uint8_t gates) {
   cv1 = analogRead(CV_CV1);
   cv2 = analogRead(CV_CV2);
 
+  #if DEBUG == 1
+  Serial.print("voct: ");
+  Serial.print(voct);
+  Serial.print(", ");
+  Serial.print(cv1);
+  Serial.print(", ");
+  Serial.print(cv2);
+  Serial.print("  |  ");
+  Serial.print(gates, BIN);
+  Serial.println("");
+  #endif
+
   switch(currentMode) {
     case MODE_POLY: return doPoly(gates);
     case MODE_RHYTHM: return doRhythm(gates);

@@ -5,7 +5,7 @@
 
 #define DEBUG 0
 #define DEBUG_VERBOSE 0
-#define VERSION "0.0.3-alpha"
+#define VERSION "0.0.5-alpha"
 #define CV_VOCT A0
 #define CV_CV1 A1
 #define CV_CV2 A2
@@ -13,8 +13,8 @@
 
 // 74hc165 pins       Nano                  | 74hc165
 #define SHIFT_CLKIN 4 // Clock Inhibit  | 15
-#define SHIFT_LOAD 6  // Shift/Load     | 1
-#define SHIFT_CLK 5   // Clock          | 2
+#define SHIFT_LOAD 5  // Shift/Load     | 1
+#define SHIFT_CLK 6   // Clock          | 2
 #define SHIFT_DATA 12 // Data / Qh      | 7
 
 // bits for the 74hc165 values

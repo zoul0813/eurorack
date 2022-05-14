@@ -37,7 +37,11 @@ void updateEncoder();
 
 void setup()
 {
-  pixelsInit();
+  #if DEBUG==1
+  Serial.begin(115200);
+  Serial.print("OPL Eurorack ");
+  Serial.println(VERSION);
+  #endif
   oplInit();
 
   // setup 74hc165 pins
@@ -48,7 +52,10 @@ void setup()
 void loop()
 {
   byte inputs = getShift();
-
+  #if DEBUG_VERBOSE == 1
+  Serial.print(inputs, BIN);
+  Serial.println("");
+  #endif
   if (inputs != last_inputs)
   {
     // shift off the next/prev buttons, we only have 6 gates
